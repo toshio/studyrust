@@ -1,5 +1,7 @@
 # Struct ⇔ JSON
 
+RustでJSONを扱う方法について学習したので記録しておく。
+
 ## 1. プロジェクト作成
 
 ```bash
@@ -28,6 +30,10 @@ serde_json = "1.0.108"
 ```
 
 ## 3. プログラム作成
+
+User構造体を定義して、JSONデータからUser構造体のオブジェクトへマッピングする方法と、その逆に、User構造体のオブジェクトからJSONデータを生成する方法をテストケースで示す。
+
+User構造体に未定義な項目がJSONデータから渡ってきた場合や、必須項目としないOption型の扱い方、必須データがJSONデータに含まれていない以異常ケースも検証してみた。
 
 ##### [src/lib.rs](src/lib.rs)
 
@@ -62,15 +68,15 @@ mod tests {
         };
 
         let serialized = serde_json::to_string(&user).unwrap();
-        assert_eq!(r#"{"name":"Hello"}"#, serialized);
+        assert_eq!(serialized, r#"{"name":"Hello"}"#);
     }
 
     #[test]
     fn parse_ok() {
         let user: User = serde_json::from_str(r#"{"name":"Hello"}"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.email, None);
+        assert_eq!("Hello", user.name);
+        assert_eq!(None, user.email);
         assert!(user.extra.is_empty());
     }
 
@@ -82,8 +88,8 @@ mod tests {
                 "email":"hello@example.com"
             }"#).unwrap();
             println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.email.unwrap(), "hello@example.com");
+        assert_eq!("Hello", user.name);
+        assert_eq!("hello@example.com", user.email.unwrap());
         assert!(user.extra.is_empty());
     }
 
@@ -95,8 +101,8 @@ mod tests {
                 "age":10
             }"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.extra["age"], 10);
+        assert_eq!("Hello", user.name);
+        assert_eq!(10, user.extra["age"]);
     }
 
     #[test]
@@ -112,30 +118,35 @@ mod tests {
                 ]
             }"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
+        assert_eq!("Hello", user.name);
         assert!(user.extra.contains_key("skills"));
     }
 }
 ```
 
-## 4. プログラム実行
+## 4. テスト実行
+
+JavaのJunitなど（期待値、結果）の
+
+https://users.rust-lang.org/t/assert-eq-expected-and-actual/20304
 
 ```bash
 $ cargo test -- --nocapture
    Compiling jsontest v0.1.0 (/home/toshio/workspace/studyrust/jsontest)
-    Finished test [unoptimized + debuginfo] target(s) in 0.68s
+    Finished test [unoptimized + debuginfo] target(s) in 0.31s
      Running unittests src/lib.rs (target/debug/deps/jsontest-ff95d53f666c330d)
 
-running 5 tests
-User { name: "Hello", email: None, extra: {} }
-User { name: "Hello", email: None, extra: {"skills": Array [Object {"name": String("Rust"), "year": Number(1)}]} }
-User { name: "Hello", email: None, extra: {"age": Number(10)} }
-User { name: "Hello", email: Some("hello@example.com"), extra: {} }
-test tests::parse_ok ... ok
-test tests::parse_ok_extra_complex ... ok
-test tests::parse_ok_extra ... ok
-test tests::parse_ok_option ... ok
+running 6 tests
 test tests::to_json ... ok
+User { name: "Hello", email: None, extra: {} }
+User { name: "Hello", email: Some("hello@example.com"), extra: {} }
+User { name: "Hello", email: None, extra: {"age": Number(10)} }
+User { name: "Hello", email: None, extra: {"skills": Array [Object {"name": String("Rust"), "year": Number(1)}]} }
+test tests::parse_ok ... ok
+test tests::parse_ok_option ... ok
+test tests::parse_ok_extra ... ok
+test tests::parse_ok_extra_complex ... ok
+test tests::parse_err_no_required_field ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 ```

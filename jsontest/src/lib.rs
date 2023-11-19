@@ -28,15 +28,15 @@ mod tests {
         };
 
         let serialized = serde_json::to_string(&user).unwrap();
-        assert_eq!(r#"{"name":"Hello"}"#, serialized);
+        assert_eq!(serialized, r#"{"name":"Hello"}"#);
     }
 
     #[test]
     fn parse_ok() {
         let user: User = serde_json::from_str(r#"{"name":"Hello"}"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.email, None);
+        assert_eq!("Hello", user.name);
+        assert_eq!(None, user.email);
         assert!(user.extra.is_empty());
     }
 
@@ -48,8 +48,8 @@ mod tests {
                 "email":"hello@example.com"
             }"#).unwrap();
             println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.email.unwrap(), "hello@example.com");
+        assert_eq!("Hello", user.name);
+        assert_eq!("hello@example.com", user.email.unwrap());
         assert!(user.extra.is_empty());
     }
 
@@ -61,8 +61,8 @@ mod tests {
                 "age":10
             }"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
-        assert_eq!(user.extra["age"], 10);
+        assert_eq!("Hello", user.name);
+        assert_eq!(10, user.extra["age"]);
     }
 
     #[test]
@@ -78,7 +78,16 @@ mod tests {
                 ]
             }"#).unwrap();
         println!("{:?}", user);
-        assert_eq!(user.name, "Hello");
+        assert_eq!("Hello", user.name);
         assert!(user.extra.contains_key("skills"));
+    }
+
+    #[test]
+    fn parse_err_no_required_field() {
+        let result: Result<User,serde_json::Error> = serde_json::from_str(r#"
+            {
+                "id": 12345
+            }"#);
+        assert_eq!(result.is_ok(), false);
     }
 }
